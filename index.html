@@ -7,8 +7,26 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome to the Relationship App</h1>
-    <p>This is the main page of the relationship application.</p>
-    <p>Please register or log in to access your relationship information.</p>
+
+<div id="registerForm" class="form-container">
+    <h2>Register</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="registerUser()">Register</button>
+</div>
+
+<div id="linkForm" class="form-container">
+    <h2>Link Partner ID</h2>
+    <input type="text" id="userID" placeholder="Your Unique ID">
+    <input type="text" id="partnerID" placeholder="Partner's Unique ID">
+    <button onclick="linkPartner()">Link Partner</button>
+</div>
+
+<div id="relationshipInfo" class="info-container">
+    <h2>Relationship Information</h2>
+    <div id="relationshipData"></div>
+</div>
+
+<script src="scripts.js"></script>
 </body>
 </html>
