@@ -1,0 +1,9 @@
+# Python
+*.pyc
+_pycache_/
+
+# SQLite database
+*.db
+
+# Configuration files (if any)
+config.py
