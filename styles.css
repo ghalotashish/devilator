@@ -1,0 +1,39 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+.form-container {
+    margin-bottom: 20px;
+}
+
+.info-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+input {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+h2 {
+    margin-top: 0;
+}
