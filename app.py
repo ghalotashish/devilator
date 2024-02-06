@@ -1,79 +1,70 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
 import random
 import string
-import sqlite3
 
 app = Flask(_name_)
 
-# Function to generate a unique ID
-def generate_unique_id():
+# Function to generate a unique relationship number
+def generate_relationship_number():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
-# Database connection
-conn = sqlite3.connect('relationships.db')
-c = conn.cursor()
+# Function to connect to the SQLite database
+def connect_db():
+    return sqlite3.connect('relationships.db')
 
-# Create Users table if not exists
-c.execute('''CREATE TABLE IF NOT EXISTS Users (
-                UserID INTEGER PRIMARY KEY AUTOINCREMENT,
-                Username TEXT NOT NULL,
-                Password TEXT NOT NULL,
-                UniqueID TEXT UNIQUE
-            )''')
+# Route for the main page
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# Create Relationships table if not exists
-c.execute('''CREATE TABLE IF NOT EXISTS Relationships (
-                RelationshipID INTEGER PRIMARY KEY AUTOINCREMENT,
-                Partner1ID INTEGER,
-                Partner2ID INTEGER,
-                StartDate DATE,
-                Milestones TEXT,
-                FOREIGN KEY (Partner1ID) REFERENCES Users(UserID),
-                FOREIGN KEY (Partner2ID) REFERENCES Users(UserID)
-            )''')
-
-# Route to register a new user
-@app.route('/register', methods=['POST'])
+# Route for user registration
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    data = request.get_json()
-    username = data['username']
-    password = data['password']
-    unique_id = generate_unique_id()
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = connect_db()
+        cursor = conn.cursor()
+        try:
+            unique_id = generate_relationship_number()
+            cursor.execute("INSERT INTO Users (Username, Password, UniqueID) VALUES (?, ?, ?)", (username, password, unique_id))
+            conn.commit()
+            return redirect(url_for('login'))
+        except sqlite3.Error as e:
+            error_message = "Error occurred: " + str(e)
+            return render_template('register.html', error=error_message)
+        finally:
+            conn.close()
+    return render_template('register.html')
 
-    try:
-        c.execute("INSERT INTO Users (Username, Password, UniqueID) VALUES (?, ?, ?)", (username, password, unique_id))
-        conn.commit()
-        return jsonify({'message': 'User registered successfully', 'unique_id': unique_id}), 201
-    except sqlite3.IntegrityError:
-        return jsonify({'error': 'Username already exists'}), 400
+# Route for user login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Users WHERE Username=? AND Password=?", (username, password))
+        user = cursor.fetchone()
+        if user:
+            return redirect(url_for('relationship', unique_id=user[3]))
+        else:
+            return render_template('login.html', error='Invalid username or password')
+    return render_template('login.html')
 
-# Route to link partner IDs
-@app.route('/link', methods=['POST'])
-def link_partner():
-    data = request.get_json()
-    user_id = data['user_id']
-    partner_id = data['partner_id']
-
-    try:
-        c.execute("INSERT INTO Relationships (Partner1ID, Partner2ID) VALUES (?, ?)", (user_id, partner_id))
-        conn.commit()
-        return jsonify({'message': 'Partner linked successfully'}), 200
-    except sqlite3.IntegrityError:
-        return jsonify({'error': 'Relationship already exists'}), 400
-
-# Route to get relationship information
-@app.route('/relationship/<unique_id>', methods=['GET'])
-def get_relationship(unique_id):
-    c.execute('''SELECT * FROM Users WHERE UniqueID=?''', (unique_id,))
-    user = c.fetchone()
-
-    if user:
-        user_id = user[0]
-        c.execute('''SELECT * FROM Relationships WHERE Partner1ID=? OR Partner2ID=?''', (user_id, user_id))
-        relationships = c.fetchall()
-        return jsonify({'relationships': relationships}), 200
-    else:
-        return jsonify({'error': 'User not found'}), 404
+# Route for displaying relationship status
+@app.route('/relationship/<unique_id>')
+def relationship(unique_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Relationships WHERE Partner1ID=? OR Partner2ID=?", (unique_id, unique_id))
+    relationships = cursor.fetchall()
+    conn.close()
+    return render_template('relationship.html', relationships=relationships)
 
 if _name_ == '_main_':
     app.run(debug=True)
+         
+   
